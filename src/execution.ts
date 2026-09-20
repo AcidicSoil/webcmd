@@ -206,26 +206,22 @@ export async function executeCommand(
     cmd = await loadCommand(cmd);
     if (shouldUseBrowserSession(cmd)) {
       const electron = isElectronApp(cmd.site);
+      const manualEndpoint = process.env.WEBCMD_CDP_ENDPOINT?.trim();
       let cdpEndpoint: string | undefined;
-
-      if (electron) {
-        // Electron apps: respect manual endpoint override, then try auto-detect
-        const manualEndpoint = process.env.WEBCMD_CDP_ENDPOINT;
-        if (manualEndpoint) {
-          const port = Number(new URL(manualEndpoint).port);
-          if (!await probeCDP(port)) {
-            throw new CommandExecutionError(
-              `CDP not reachable at ${manualEndpoint}`,
-              'Check that the app is running with --remote-debugging-port and the endpoint is correct.',
-            );
-          }
-          cdpEndpoint = manualEndpoint;
-        } else {
-          cdpEndpoint = await resolveElectronEndpoint(cmd.site);
+      if (manualEndpoint) {
+        const port = Number(new URL(manualEndpoint).port);
+        if (!await probeCDP(port)) {
+          throw new CommandExecutionError(
+            `CDP not reachable at ${manualEndpoint}`,
+            'Check that the browser or app is running with remote debugging enabled and the endpoint is correct.',
+          );
         }
+        cdpEndpoint = manualEndpoint;
+      } else if (electron) {
+        cdpEndpoint = await resolveElectronEndpoint(cmd.site);
       }
 
-      const BrowserFactory = getBrowserFactory(cmd.site);
+      const BrowserFactory = getBrowserFactory(cmd.site, cdpEndpoint);
       const profileSelection = resolveProfileSelection(opts.profile);
       const profileRouting = profileRouteParams(profileSelection);
       const contextId = profileSelection?.contextId;

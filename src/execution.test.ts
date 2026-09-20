@@ -35,6 +35,8 @@ import * as runtime from './runtime.js';
 import * as capRouting from './capabilityRouting.js';
 import { clearDaemonRunContext, getDaemonRunContext } from './session-lease.js';
 import { sendCommand } from './browser/daemon-client.js';
+import { CDPBridge } from './browser/index.js';
+import * as launcher from './launcher.js';
 
 function deferred<T = void>(): {
   promise: Promise<T>;
@@ -753,6 +755,40 @@ describe('executeCommand — non-browser timeout', () => {
       await executeCommand(verified, {}, false, { profile: 'work', session: 'session_a' });
       expect(mockClearSessionHandoff).not.toHaveBeenCalled();
     });
+  });
+
+  it('routes ordinary site adapters through an explicit external CDP endpoint', async () => {
+    vi.stubEnv('WEBCMD_CDP_ENDPOINT', 'http://127.0.0.1:9222');
+    const mockPage = { closeWindow: vi.fn().mockResolvedValue(undefined) } as any;
+    const calls: Array<{ Factory: unknown; cdpEndpoint?: string }> = [];
+
+    vi.spyOn(capRouting, 'shouldUseBrowserSession').mockReturnValue(true);
+    vi.spyOn(launcher, 'probeCDP').mockResolvedValue(true);
+    vi.spyOn(runtime, 'browserSession').mockImplementation(async (Factory, fn, opts) => {
+      calls.push({ Factory, cdpEndpoint: opts?.cdpEndpoint });
+      return fn(mockPage);
+    });
+
+    const cmd = cli({
+      site: 'chatgpt',
+      name: 'external-cdp-site-adapter',
+      access: 'read',
+      description: 'test explicit CDP routing for a normal site adapter',
+      browser: true,
+      strategy: Strategy.PUBLIC,
+      func: async () => [{ ok: true }],
+    });
+
+    try {
+      await executeCommand(cmd, {});
+      expect(calls).toEqual([{
+        Factory: CDPBridge,
+        cdpEndpoint: 'http://127.0.0.1:9222',
+      }]);
+    } finally {
+      vi.unstubAllEnvs();
+      vi.restoreAllMocks();
+    }
   });
 
   it('reuses a persistent site browser session and keeps the tab lease open', async () => {

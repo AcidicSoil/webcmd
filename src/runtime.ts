@@ -7,10 +7,15 @@ import { DEFAULT_BROWSER_COMMAND_TIMEOUT, DEFAULT_BROWSER_CONNECT_TIMEOUT } from
 export { DEFAULT_BROWSER_COMMAND_TIMEOUT, DEFAULT_BROWSER_CONNECT_TIMEOUT };
 
 /**
- * Returns the appropriate browser factory based on site type.
- * Uses CDPBridge for registered Electron apps, otherwise BrowserBridge.
+ * Returns the browser factory for an adapter execution.
+ * An explicit CDP endpoint always wins, regardless of site type.
+ * Registered Electron apps use CDPBridge when no explicit endpoint is supplied.
  */
-export function getBrowserFactory(site?: string): new () => IBrowserFactory {
+export function getBrowserFactory(
+  site?: string,
+  cdpEndpoint?: string,
+): new () => IBrowserFactory {
+  if (cdpEndpoint?.trim()) return CDPBridge;
   if (site && isElectronApp(site)) return CDPBridge;
   return BrowserBridge;
 }
