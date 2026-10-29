@@ -39,6 +39,12 @@ Webcmd pairs live browser control with a self-learning memory layer:
 
 https://github.com/user-attachments/assets/bdb65307-9e2a-4d58-9175-45d59528ae37
 
+## Proxy Partner Giveaway (courtesy: Swiftproxy)
+
+Power your web automation and data collection with Swiftproxy, a residential proxy provider offering rotating and static residential proxies for reliable web access. With 90M+ residential IPs across 220+ locations, Swiftproxy helps support automated browsing and web-based workflows. Get 10% off with code PROXY90.
+
+Link: https://www.swiftproxy.net/?ref=webcmd
+
 ## Quick Start
 
 ### Agent prompt
